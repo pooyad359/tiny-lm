@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Dict, List, Optional
 
 import torch
@@ -61,6 +62,29 @@ class CharacterTokenizer:
         max_length: Optional[int] = None,
     ) -> torch.Tensor:
         pass
+    
+    def save(self, filepath: str|Path) -> None:
+        filepath = Path(filepath)
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+        vocab_data = {
+            "token_to_id": self.token_to_id,
+            "id_to_token": {int(k): v for k, v in self.id_to_token.items()}
+        }
+        torch.save(vocab_data, filepath)
+    
+    @classmethod
+    def load(cls, filepath: str | Path) -> 'CharacterTokenizer':
+        filepath = Path(filepath)
+        if not filepath.exists() or not filepath.is_file():
+            raise FileNotFoundError(f"Vocabulary file {filepath} not found")
+            
+        vocab_data = torch.load(filepath)
+        
+        tokenizer = cls()
+        tokenizer.token_to_id = vocab_data["token_to_id"]
+        tokenizer.id_to_token = {int(k): v for k, v in vocab_data["id_to_token"].items()}
+        
+        return tokenizer
     
     def __len__(self) -> int:
         return len(self.token_to_id)
