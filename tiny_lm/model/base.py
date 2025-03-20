@@ -99,3 +99,23 @@ class FeedForward(nn.Module):
         x = self.c_proj(x)
         x = self.dropout(x)
         return x
+
+
+class TransformerBlock(nn.Module):
+    """
+    Transformer block: communication followed by computation
+    """
+
+    def __init__(self, config):
+        super().__init__()
+        self.ln_1 = nn.LayerNorm(config.n_embd)
+        self.attn = CausalSelfAttention(config)
+        self.ln_2 = nn.LayerNorm(config.n_embd)
+        self.mlp = FeedForward(config)
+
+    def forward(self, x):
+        # self-attention with residual connection
+        x = x + self.attn(self.ln_1(x))
+        # feed-forward with residual connection
+        x = x + self.mlp(self.ln_2(x))
+        return x
